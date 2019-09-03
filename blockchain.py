@@ -8,6 +8,7 @@ class Blockchain(object):
         self.chain = []
         self.memPool = []
         self.createGenesisBlock()
+        #difficulty ='0000'
 
     def createGenesisBlock(self):
         self.createBlock(0, 000000)
@@ -15,12 +16,11 @@ class Blockchain(object):
    
 
     def createBlock(self, nonce, previousHash):
-        # Implemente aqui o método para retornar um bloco (formato de dicionário)
-        # Lembre que o hash do bloco anterior é o hash na verdade do CABEÇALHO do bloco anterior.
-        
+       
         index = len(self.chain)
         timestamp = int(time.time())
 
+        #Creates genesis block
         if(index==0):
             block = {
             'index': index,
@@ -30,6 +30,7 @@ class Blockchain(object):
             'previousHash': 0,
             'transactions': self.memPool
             }
+        #Creates other blocks
         else:
             block = {
                 'index': index,
@@ -42,22 +43,55 @@ class Blockchain(object):
             
         
         self.chain.append(block)
-        #print("aqui",self.chain)
-
+    
+    # @property
+    # def prevBlock(self):
+    #     prevBlock = (self.chain[-1].copy())['transactions'].pop()
+    #     return prevBlock
+    
     @staticmethod
     def generateHash(data):
         blkSerial = json.dumps(data, sort_keys=True).encode()
         return hashlib.sha256(blkSerial).hexdigest()
     
     def generateHeaderHash(self):
-        #Cria copia do chain
+        #Copies the last block in the chain and hashes the header
         header = (self.chain[-1]).copy()
-        #Header do bloco anterior
         header.pop('transactions')
         return self.generateHash(header)
+    
+    def getBlockId(self, block):
+        return self.generateHash(block)
+        
+
+    def mineProofOfWork(self):
+        difficulty = '0000'
+        block = self.chain[-1].copy()
+        block.pop('transactions')
+        validNonce = 0
+        while(True):
+            validNonce+=1
+            block['nonce'] = validNonce
+            proofOfWork = self.getBlockId(block)
+            
+            if(proofOfWork[:4] == difficulty):
+                break
+
+        return validNonce
+    
+    def isValidProof(self,  nonce):
+        difficulty = '0000'
+        block = self.chain[-1].copy()
+        block.pop('transactions')
+        block['nonce']=nonce
+        checkBlockId = self.getBlockId(block)
+        if(checkBlockId[:4]==difficulty):
+            return True
+        
+        return False
+        
 
     def printChain(self):
-        # Implemente aqui um método para imprimir de maneira verbosa e intuitiva o blockchain atual.
         count = 0
         for i in self.chain:
             
@@ -81,6 +115,10 @@ class Blockchain(object):
     
 # Teste
 blockchain = Blockchain()
+
+
 for x in range(0, 10): blockchain.createBlock(0, 0)
-blockchain.printChain()
+#blockchain.printChain()
+print("valid nonce: ", blockchain.mineProofOfWork())
+print("is valid? ", blockchain.isValidProof(blockchain.mineProofOfWork()))
 
