@@ -7,19 +7,21 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.memPool = []
-        self.createGenesisBlock()
         self.difficulty ='0000'
+        self.createGenesisBlock()
+        
         
 
     def createGenesisBlock(self):
-        self.createBlock(0, 000000)
+        self.createBlock(0, 0000)
+        genesisBlock = self.chain[-1]
+        genesisBlock['nonce'] = self.mineProofOfWork(self.prevBlock)
     
    
     def createBlock(self, nonce, previousHash):
        
         index = len(self.chain)
         timestamp = int(time.time())
-
         # Creates genesis block
         if(index==0):
             block = {
@@ -32,10 +34,11 @@ class Blockchain(object):
             }
         # Creates other blocks
         else:
+            
             block = {
                 'index': index,
                 'timestamp': timestamp,
-                'nonce': 0,
+                'nonce': self.mineProofOfWork(self.prevBlock),
                 'merkleRoot': 0,
                 'previousHash': self.getBlockId(self.prevBlock),
                 'transactions': self.memPool
@@ -55,18 +58,16 @@ class Blockchain(object):
     @property
     def prevBlock(self):
 
-        prevBlockHeader = self.chain[-1].copy()
-        prevBlockHeader.pop('transactions')
-        return prevBlockHeader
+        return self.chain[-1]
 
     def getBlockId(self, block):
 
         return self.generateHash(block)
         
 
-    def mineProofOfWork(self):
+    def mineProofOfWork(self, prevBlock):
 
-        block = self.prevBlock
+        block = prevBlock
         validNonce = 0
 
         while(True):
@@ -74,7 +75,7 @@ class Blockchain(object):
             block['nonce'] = validNonce
             proofOfWork = self.getBlockId(block)
             
-            if(proofOfWork[:4] == self.difficulty):
+            if(self.isValidProof(validNonce)):
                 break
 
         return validNonce
@@ -110,10 +111,9 @@ class Blockchain(object):
 # Teste
 blockchain = Blockchain()
 
-for x in range(0, 10): blockchain.createBlock(0, 0)
-#blockchain.printChain()
+for x in range(0, 4): blockchain.createBlock(0, 0)
+blockchain.printChain()
 
-testNonce = blockchain.mineProofOfWork()
-print("Valid nonce: ", testNonce)
-print("Is valid? ", blockchain.isValidProof(testNonce))
-
+# testNonce = blockchain.mineProofOfWork()
+# print("Valid nonce: ", testNonce)
+# print("Is valid? ", blockchain.isValidProof(testNonce))
