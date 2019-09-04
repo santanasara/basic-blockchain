@@ -7,18 +7,18 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.memPool = []
-        self.difficulty ='0000'
+        self.difficulty ='00'
         self.createGenesisBlock()
         
         
 
     def createGenesisBlock(self):
-        self.createBlock(0, 0000)
+        self.createBlock()
         genesisBlock = self.chain[-1]
         genesisBlock['nonce'] = self.mineProofOfWork(self.prevBlock)
     
    
-    def createBlock(self, nonce, previousHash):
+    def createBlock(self):
        
         index = len(self.chain)
         timestamp = int(time.time())
@@ -38,7 +38,7 @@ class Blockchain(object):
             block = {
                 'index': index,
                 'timestamp': timestamp,
-                'nonce': self.mineProofOfWork(self.prevBlock),
+                'nonce': 0,
                 'merkleRoot': 0,
                 'previousHash': self.getBlockId(self.prevBlock),
                 'transactions': self.memPool
@@ -61,32 +61,35 @@ class Blockchain(object):
         return self.chain[-1]
 
     def getBlockId(self, block):
-
-        return self.generateHash(block)
+        blockHeader = block.copy()
+        blockHeader.pop('transactions')
+        return self.generateHash(blockHeader)
         
 
     def mineProofOfWork(self, prevBlock):
 
-        block = prevBlock
         validNonce = 0
-
+        prevBlockCopy = prevBlock.copy()
         while(True):
             validNonce+=1
-            block['nonce'] = validNonce
-            proofOfWork = self.getBlockId(block)
+            prevBlockCopy['nonce'] = validNonce
+            proofOfWork = self.getBlockId(prevBlockCopy)
             
             if(self.isValidProof(validNonce)):
+                self.prevBlock['nonce'] = validNonce
                 break
 
         return validNonce
     
+    
     def isValidProof(self,  nonce):
         
-        block = self.prevBlock
+        block = self.prevBlock.copy()
         block['nonce'] = nonce
+        print(block['index'])
         checkBlockId = self.getBlockId(block)
 
-        if(checkBlockId[:4]==self.difficulty):
+        if(checkBlockId[:2]==self.difficulty):
             return True
         
         return False
@@ -111,9 +114,13 @@ class Blockchain(object):
 # Teste
 blockchain = Blockchain()
 
-for x in range(0, 4): blockchain.createBlock(0, 0)
+
+for x in range(0, 3): 
+    blockchain.createBlock()
+    blockchain.mineProofOfWork(blockchain.prevBlock)
 blockchain.printChain()
 
-# testNonce = blockchain.mineProofOfWork()
-# print("Valid nonce: ", testNonce)
-# print("Is valid? ", blockchain.isValidProof(testNonce))
+for x in blockchain.chain :
+    print('[Bloco #{} : {}] Nonce: {} | É válido? {}'.format(x['index'], blockchain.getBlockId(x), x['nonce'], blockchain.isValidProof(x['nonce'])))
+    #print(x['nonce'])
+    
