@@ -3,7 +3,7 @@ import json
 import time
 import copy
 class Blockchain(object):
-    difficulty ='0000'
+    difficulty = 4
     def __init__(self):
         self.chain = []
         self.memPool = []
@@ -46,18 +46,15 @@ class Blockchain(object):
         
         self.chain.append(block)
        
-    
+    @property
+    def prevBlock(self):
+        return self.chain[-1]
+
     @staticmethod
     def generateHash(data):
-
         blkSerial = json.dumps(data, sort_keys=True).encode()
         return hashlib.sha256(blkSerial).hexdigest()
     
-    
-    @property
-    def prevBlock(self):
-
-        return self.chain[-1]
 
     @staticmethod
     def getBlockId(block):
@@ -66,34 +63,32 @@ class Blockchain(object):
         return Blockchain.generateHash(blockHeader)
         
 
-    def mineProofOfWork(self, prevBlock):
-
-        validNonce = 0
-        prevBlockCopy = prevBlock.copy()
-        while(True):
-            validNonce+=1
-            prevBlockCopy['nonce'] = validNonce
-            proofOfWork = self.getBlockId(prevBlockCopy)
-            
-            if(self.isValidProof(prevBlockCopy, validNonce)):
-                self.prevBlock['nonce'] = validNonce
-                break
-
-        return validNonce
     
     @staticmethod
     def isValidProof(prevBlock, nonce):
-        
         block = prevBlock.copy()
         block['nonce'] = nonce
         
         checkBlockId = Blockchain.getBlockId(block)
 
-        if(checkBlockId[:4]==Blockchain.difficulty):
+        if(checkBlockId[:Blockchain.difficulty]=='0'*Blockchain.difficulty):
             return True
         
         return False
         
+    def mineProofOfWork(self, prevBlock):
+        validNonce = 0
+        BlockCopy = prevBlock.copy()
+        while(True):
+            validNonce+=1
+            BlockCopy['nonce'] = validNonce
+            proofOfWork = self.getBlockId(BlockCopy)
+            
+            if(self.isValidProof(BlockCopy, validNonce)):
+                self.prevBlock['nonce'] = validNonce
+                break
+
+        return validNonce
 
     def printChain(self):
         count = 0
@@ -113,7 +108,6 @@ class Blockchain(object):
     
 # Teste
 blockchain = Blockchain()
-
 
 for x in range(0, 3): 
     blockchain.createBlock()
