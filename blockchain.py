@@ -3,11 +3,10 @@ import json
 import time
 import copy
 class Blockchain(object):
-
+    difficulty ='0000'
     def __init__(self):
         self.chain = []
         self.memPool = []
-        self.difficulty ='00'
         self.createGenesisBlock()
         
         
@@ -60,10 +59,11 @@ class Blockchain(object):
 
         return self.chain[-1]
 
-    def getBlockId(self, block):
+    @staticmethod
+    def getBlockId(block):
         blockHeader = block.copy()
         blockHeader.pop('transactions')
-        return self.generateHash(blockHeader)
+        return Blockchain.generateHash(blockHeader)
         
 
     def mineProofOfWork(self, prevBlock):
@@ -75,21 +75,21 @@ class Blockchain(object):
             prevBlockCopy['nonce'] = validNonce
             proofOfWork = self.getBlockId(prevBlockCopy)
             
-            if(self.isValidProof(validNonce)):
+            if(self.isValidProof(prevBlockCopy, validNonce)):
                 self.prevBlock['nonce'] = validNonce
                 break
 
         return validNonce
     
-    
-    def isValidProof(self,  nonce):
+    @staticmethod
+    def isValidProof(prevBlock, nonce):
         
-        block = self.prevBlock.copy()
+        block = prevBlock.copy()
         block['nonce'] = nonce
-        print(block['index'])
-        checkBlockId = self.getBlockId(block)
+        
+        checkBlockId = Blockchain.getBlockId(block)
 
-        if(checkBlockId[:2]==self.difficulty):
+        if(checkBlockId[:4]==Blockchain.difficulty):
             return True
         
         return False
@@ -118,9 +118,10 @@ blockchain = Blockchain()
 for x in range(0, 3): 
     blockchain.createBlock()
     blockchain.mineProofOfWork(blockchain.prevBlock)
+
 blockchain.printChain()
 
 for x in blockchain.chain :
-    print('[Bloco #{} : {}] Nonce: {} | É válido? {}'.format(x['index'], blockchain.getBlockId(x), x['nonce'], blockchain.isValidProof(x['nonce'])))
-    #print(x['nonce'])
+    print('[Bloco #{} : {}] Nonce: {} | É válido? {}'.format(x['index'], blockchain.getBlockId(x), x['nonce'], blockchain.isValidProof(x,x['nonce'])))
+    
     
