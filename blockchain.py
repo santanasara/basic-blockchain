@@ -53,6 +53,7 @@ class Blockchain(object):
     @staticmethod
     def generateHash(data):
         blkSerial = json.dumps(data, sort_keys=True).encode()
+        
         return hashlib.sha256(blkSerial).hexdigest()
     
 
@@ -60,34 +61,37 @@ class Blockchain(object):
     def getBlockId(block):
         blockHeader = block.copy()
         blockHeader.pop('transactions')
+        
         return Blockchain.generateHash(blockHeader)
         
 
     
     @staticmethod
     def isValidProof(prevBlock, nonce):
-        block = prevBlock.copy()
-        block['nonce'] = nonce
+        blockCopy = prevBlock.copy()
+        blockCopy['nonce'] = nonce
         
-        checkBlockId = Blockchain.getBlockId(block)
+        checkBlockId = Blockchain.getBlockId(blockCopy)
 
         if(checkBlockId[:Blockchain.difficulty]=='0'*Blockchain.difficulty):
             return True
-        
+       
+        del blockCopy
         return False
         
     def mineProofOfWork(self, prevBlock):
         validNonce = 0
-        BlockCopy = prevBlock.copy()
+        blockCopy = prevBlock.copy()
         while(True):
             validNonce+=1
-            BlockCopy['nonce'] = validNonce
-            proofOfWork = self.getBlockId(BlockCopy)
+            blockCopy['nonce'] = validNonce
+            proofOfWork = self.getBlockId(blockCopy)
             
-            if(self.isValidProof(BlockCopy, validNonce)):
+            if(self.isValidProof(blockCopy, validNonce)):
                 self.prevBlock['nonce'] = validNonce
                 break
-
+        
+        del blockCopy
         return validNonce
 
     def printChain(self):
