@@ -2,6 +2,9 @@ import hashlib
 import json
 import time
 import copy
+from bitcoin.wallet import CBitcoinSecret
+from bitcoin.signmessage import BitcoinMessage, VerifyMessage, SignMessage
+
 class Blockchain(object):
     difficulty = 4
     def __init__(self):
@@ -109,17 +112,27 @@ class Blockchain(object):
             print(block, "\n")
             count = count+1
 
-    
+
+    @staticmethod
+    def sign(privKey, message):
+        secret = CBitcoinSecret(privKey)
+        message = BitcoinMessage(message)
+        return SignMessage(secret, message)
+        
+        
+    @staticmethod
+    def verifySignature(address, signature, message):
+        
+        msg = BitcoinMessage(message)
+        return VerifyMessage(address, msg, signature)
+
 # Teste
-blockchain = Blockchain()
+address = '15phrcdLM2R3kE5QS91o4PRtXmxMhbiYP5'
+privKey = 'KwUVGQq1iWyLdKdFZh2ioCPbjAirbtrFfwqcpjSHAGQGkN3VJHc9'
 
-for x in range(0, 3): 
-    blockchain.createBlock()
-    blockchain.mineProofOfWork(blockchain.prevBlock)
+message = 'Bora assinar essa mensagem?'
 
-blockchain.printChain()
+signature = Blockchain.sign(privKey, message)
+print('Assinatura gerada: {}'.format(signature))
 
-for x in blockchain.chain :
-    print('[Bloco #{} : {}] Nonce: {} | É válido? {}'.format(x['index'], blockchain.getBlockId(x), x['nonce'], blockchain.isValidProof(x,x['nonce'])))
-    
-    
+print('Assinatura válida para mensagem e endereço indicado? {}'.format(Blockchain.verifySignature(address, signature, message)))
