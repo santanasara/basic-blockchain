@@ -1,7 +1,8 @@
 import hashlib
 import json
-import time
+from time import time
 import copy
+import random
 from bitcoin.wallet import CBitcoinSecret
 from bitcoin.signmessage import BitcoinMessage, VerifyMessage, SignMessage
 
@@ -23,12 +24,11 @@ class Blockchain(object):
     def createBlock(self):
        
         index = len(self.chain)
-        timestamp = int(time.time())
         # Creates genesis block
         if(index==0):
             block = {
             'index': index,
-            'timestamp': timestamp,
+            'timestamp': int(time()),
             'nonce': 0,
             'merkleRoot': 0,
             'previousHash': 0,
@@ -41,7 +41,7 @@ class Blockchain(object):
                 'index': index,
                 'timestamp': timestamp,
                 'nonce': 0,
-                'merkleRoot': 0,
+                'merkleRoot': self.generateMerkleRoot(self.memPool),
                 'previousHash': self.getBlockId(self.prevBlock),
                 'transactions': self.memPool
             }
@@ -107,7 +107,8 @@ class Blockchain(object):
             block = block.replace("\"", "")
             block = block.replace("{", "")
             block = block.replace("}", "")
-
+            block = block.replace("[", "")
+            block = block.replace("]", "")
             
             print(block, "\n")
             count = count+1
@@ -117,7 +118,7 @@ class Blockchain(object):
     def sign(privKey, message):
         secret = CBitcoinSecret(privKey)
         message = BitcoinMessage(message)
-        return SignMessage(secret, message)
+        return SignMessage(secret, message).decode()
         
         
     @staticmethod
@@ -126,13 +127,50 @@ class Blockchain(object):
         msg = BitcoinMessage(message)
         return VerifyMessage(address, msg, signature)
 
+
+    def createTransaction(self, sender, recipient, amount, timestamp, privKey):
+        
+        message = {
+        "sender": sender,
+        "recipient": recipient,
+        "amount": amount,
+        "timestamp": timestamp,
+        }
+
+        blkSerial = json.dumps(message, sort_keys=True)
+        signature = Blockchain.sign(privKey, blkSerial)
+        
+        transaction = {
+        "sender": sender,
+        "recipient": recipient,
+        "amount": amount,
+        "timestamp": timestamp,
+        "signature": signature
+        }
+        
+        
+        self.memPool.append(transaction)
+        #print("\n", self.memPool)
+
+    @staticmethod
+    def generateMerkleRoot(transactions):
+        transactionsData = json.dumps(transactions, sort_keys=True)
+        
+        return Blockchain.generateHash(transactionsData)
+
 # Teste
-address = '15phrcdLM2R3kE5QS91o4PRtXmxMhbiYP5'
-privKey = 'KwUVGQq1iWyLdKdFZh2ioCPbjAirbtrFfwqcpjSHAGQGkN3VJHc9'
+blockchain = Blockchain()
 
-message = 'Bora assinar essa mensagem?'
+sender = '19sXoSbfcQD9K66f5hwP5vLwsaRyKLPgXF'
+recipient = '1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N'
 
-signature = Blockchain.sign(privKey, message)
-print('Assinatura gerada: {}'.format(signature))
+# Cria 5 blocos, incluindo o Genesis, contendo de 1-4 transações cada, com valores aleatórios, entre os endereços indicados em sender e recipient.
+for x in range(0, 4): 
+    for y in range(0, random.randint(1,4)) : 
+        timestamp = int(time())
+        amount = random.uniform(0.00000001, 100)
+        blockchain.createTransaction(sender, recipient, amount, timestamp, 'L1US57sChKZeyXrev9q7tFm2dgA2ktJe2NP3xzXRv6wizom5MN1U')
+    blockchain.createBlock()
+    blockchain.mineProofOfWork(blockchain.prevBlock)
 
-print('Assinatura válida para mensagem e endereço indicado? {}'.format(Blockchain.verifySignature(address, signature, message)))
+blockchain.printChain()
